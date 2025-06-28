@@ -1,17 +1,20 @@
 package com.blogapp.services.impl;
 
 import com.blogapp.entities.User;
+import com.blogapp.exceptions.ResourceNotFoundException;
 import com.blogapp.payloads.UserDTO;
 import com.blogapp.repositories.UserRepository;
 import com.blogapp.services.UserService;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @NoArgsConstructor
-@AllArgsConstructor
+@Service
 public class UserServiceImpl implements UserService {
 
     @Autowired
@@ -20,27 +23,41 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDTO createUser(UserDTO userDTO) {
-        return null;
+        User user =  this.mapToUser(userDTO);
+        User savedUser  = userRepository.save(user);
+        return this.mapToUserDTO(savedUser);
     }
 
     @Override
     public UserDTO updateUser(UserDTO userDTO, Long id) {
-        return null;
+        User existingUser = userRepository.findById(id)
+                                          .orElseThrow(()-> new ResourceNotFoundException("User", "id", id));
+        existingUser.setName(userDTO.getName());
+        existingUser.setEmail(userDTO.getEmail());
+        existingUser.setPassword(userDTO.getPassword());
+        existingUser.setAbout(userDTO.getAbout());
+        User updatedUser = userRepository.save(existingUser);
+        return mapToUserDTO(updatedUser);
     }
 
     @Override
     public UserDTO getUserById(Long id) {
-        return null;
+        User user = userRepository.findById(id)
+                                  .orElseThrow(()-> new ResourceNotFoundException("User", "id", id));
+
+        return this.mapToUserDTO(user);
     }
 
     @Override
     public List<UserDTO> getAllUsers() {
-        return List.of();
+        List<User> users = userRepository.findAll();
+        return users.stream().map(this::mapToUserDTO).collect(Collectors.toList());
     }
 
     @Override
     public void deleteUser(Long id) {
-
+        User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+        userRepository.delete(user);
     }
 
 //    Mapping dto to user entity
