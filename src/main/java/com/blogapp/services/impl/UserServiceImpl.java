@@ -7,6 +7,7 @@ import com.blogapp.repositories.UserRepository;
 import com.blogapp.services.UserService;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +21,8 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private ModelMapper modelMapper;
 
     @Override
     public UserDTO createUser(UserDTO userDTO) {
@@ -62,22 +65,17 @@ public class UserServiceImpl implements UserService {
 
 //    Mapping dto to user entity
     private User mapToUser(UserDTO userDTO){
-        User user = new User();
-        user.setId(userDTO.getId());
-        user.setAbout(userDTO.getAbout());
-        user.setName(userDTO.getName());
-        user.setEmail(userDTO.getEmail());
-        user.setPassword(userDTO.getPassword());
-        return  user;
+        return modelMapper.map(userDTO, User.class);
     }
 //    Mapping user to UserDTO
     private UserDTO mapToUserDTO(User user){
-        UserDTO userDTO = new UserDTO();
-        userDTO.setId(user.getId());
-        userDTO.setAbout(user.getAbout());
-        userDTO.setName(user.getName());
-        userDTO.setEmail(user.getEmail());
-        userDTO.setPassword(user.getPassword());
-        return  userDTO;
+//        UserDTO userDTO = new UserDTO();
+//        userDTO.setId(user.getId());
+//        userDTO.setAbout(user.getAbout());
+//        userDTO.setName(user.getName());
+//        userDTO.setEmail(user.getEmail());
+//        userDTO.setPassword(user.getPassword());
+//        return  userDTO;
+        return modelMapper.map(user, UserDTO.class);
     }
 }
