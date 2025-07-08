@@ -5,12 +5,17 @@ import com.blogapp.entities.Post;
 import com.blogapp.entities.User;
 import com.blogapp.exceptions.ResourceNotFoundException;
 import com.blogapp.payloads.PostDTO;
+import com.blogapp.payloads.PostResponse;
 import com.blogapp.repositories.CategoryRepo;
 import com.blogapp.repositories.PostRepo;
 import com.blogapp.repositories.UserRepository;
 import com.blogapp.services.PostService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -63,10 +68,22 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public List<PostDTO> getAllPost() {
-        List<Post> posts = postRepo.findAll();
-        List<PostDTO> postDTOS = posts.stream().map(post -> modelMapper.map(post, PostDTO.class)).toList();
-        return postDTOS;
+    public PostResponse getAllPost(Integer pageNo, Integer pageSize, String sortBy, String sortDir) {
+        Sort sort = (sortDir.equalsIgnoreCase("asc")) ?
+                    Sort.by(sortBy).ascending()
+                    : Sort.by(sortBy).descending();
+        Pageable p = PageRequest.of(pageNo, pageSize, sort);
+        Page<Post> pagePost = postRepo.findAll(p);
+        List<Post> posts1 = pagePost.getContent();
+        List<PostDTO> postDTOS = posts1.stream().map(post -> modelMapper.map(post, PostDTO.class)).toList();
+        PostResponse postResponse = new PostResponse();
+        postResponse.setContent(postDTOS);
+        postResponse.setPageNo(pagePost.getNumber());
+        postResponse.setPageSize(pagePost.getSize());
+        postResponse.setTotalElements(pagePost.getTotalElements());
+        postResponse.setTotalPages(pagePost.getTotalPages());
+        postResponse.setLastPage(pagePost.isLast());
+        return postResponse;
     }
 
     @Override
@@ -75,12 +92,16 @@ public class PostServiceImpl implements PostService {
         return modelMapper.map(post, PostDTO.class);
     }
 
+//    Getting posts by category
+//    Using pagination.
     @Override
-    public List<PostDTO> getPostsByCategory(Long categoryId) {
+    public List<PostDTO> getPostsByCategory(Long categoryId, Integer pageNo, Integer pageSize) {
         Category category = categoryRepo.findById(categoryId).orElseThrow(()-> new ResourceNotFoundException("Category", "Category Id", categoryId));
-        List<Post> postList =  postRepo.findByCategory(category);
-        List<PostDTO> postDTOS = postList.stream().map(post -> modelMapper.map(post, PostDTO.class)).toList();
-        return postDTOS;
+        Pageable pageable = PageRequest.of(pageNo, pageSize);
+        Page<Post> page = postRepo.findByCategory(category, pageable);
+        List<Post> posts = page.getContent();
+        List<PostDTO> postDTOS = posts.stream().map((post) -> modelMapper.map(post, PostDTO.class)).toList();
+        return  postDTOS;
     }
 
     @Override
@@ -92,7 +113,9 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public List<Post> searchPosts(String keyword) {
-        return List.of();
+    public List<PostDTO> searchPosts(String keyword) {
+        List<Post> posts = postRepo.findByTitleContaining(keyword);
+        List<PostDTO> postDTOS = posts.stream().map(post -> modelMapper.map(post, PostDTO.class)).toList();
+        return  postDTOS;
     }
 }
